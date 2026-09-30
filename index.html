@@ -92,6 +92,61 @@
     .modal-box { background: #111624; border: 1px solid rgba(255,255,255,0.15); border-radius: 20px; padding: 32px 24px; text-align: center; width: 100%; max-width: 380px; }
     .modal-emoji { font-size: 3.5rem; margin-bottom: 12px; }
     .modal-title { font-size: 1.4rem; font-weight: 800; color: #fff; margin-bottom: 6px; }
+
+    /* --- Smooth Scrolling --- */
+    html { scroll-behavior: smooth; }
+
+    /* --- Top Right Leaderboard Button --- */
+    .lb-fab {
+      position: absolute;
+      top: 24px;
+      right: 24px;
+      background: rgba(255, 215, 0, 0.12);
+      border: 1px solid rgba(255, 215, 0, 0.4);
+      color: #ffd700;
+      padding: 10px 18px;
+      border-radius: 999px;
+      font-weight: 800;
+      font-size: 0.85rem;
+      cursor: pointer;
+      backdrop-filter: blur(10px);
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 4px 15px rgba(255, 215, 0, 0.2);
+    }
+    .lb-fab:hover {
+      background: rgba(255, 215, 0, 0.25);
+      transform: translateY(-2px) scale(1.05);
+      box-shadow: 0 8px 25px rgba(255, 215, 0, 0.4);
+    }
+
+    /* --- Leaderboard Section UI --- */
+    .lb-controls { display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; }
+    .lb-tabs-container { display: flex; gap: 10px; }
+    .lb-tabs { display: flex; flex: 1; background: rgba(0,0,0,0.4); border-radius: 12px; padding: 4px; border: 1px solid rgba(255,255,255,0.05); }
+    .lb-tab { flex: 1; padding: 10px; border: none; background: transparent; color: var(--text-muted); font-weight: 700; font-size: 0.85rem; cursor: pointer; border-radius: 8px; transition: 0.3s; }
+    .lb-tab.active { background: rgba(0, 242, 254, 0.15); color: var(--accent-cyan); box-shadow: 0 2px 10px rgba(0, 242, 254, 0.15); }
+    
+    .lb-list { display: flex; flex-direction: column; gap: 8px; max-height: 400px; overflow-y: auto; padding-right: 5px; }
+    .lb-list::-webkit-scrollbar { width: 6px; }
+    .lb-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+    
+    .lb-item { display: flex; align-items: center; padding: 14px 18px; background: rgba(12, 16, 26, 0.6); border: 1px solid var(--card-border); border-radius: 12px; transition: all 0.3s ease; }
+    .lb-item:hover { background: rgba(18, 24, 38, 0.9); transform: translateX(5px); border-color: rgba(0, 242, 254, 0.3); }
+    
+    .lb-rank { font-size: 1.3rem; font-weight: 800; width: 45px; display: flex; justify-content: center; }
+    .rank-1 { color: #ffd700; font-size: 1.8rem; text-shadow: 0 0 15px rgba(255,215,0,0.4); }
+    .rank-2 { color: #c0c0c0; font-size: 1.6rem; }
+    .rank-3 { color: #cd7f32; font-size: 1.4rem; }
+    .rank-other { color: var(--text-muted); font-size: 1.1rem; }
+    
+    .lb-details { flex: 1; padding-left: 12px; }
+    .lb-name { font-weight: 800; font-size: 1.05rem; color: #fff; }
+    .lb-hours { font-weight: 800; color: var(--accent-cyan); font-size: 1.2rem; text-align: right; }
+    .lb-hours span { font-size: 0.75rem; color: var(--text-muted); font-weight: 600; }
   </style>
 </head>
 <body>
@@ -99,6 +154,11 @@
   <div class="glow-orb"></div>
 
   <div class="container">
+    <div class="container">
+    <!-- Top Right Leaderboard Button -->
+    <button class="lb-fab" onclick="scrollToLeaderboard()">
+      🏆 LEADERBOARD
+    </button>
     <div class="header">
       <div class="badge-pill">⚡ Live Tracker</div>
       <h1>Next Gen Devs API</h1>
@@ -119,11 +179,10 @@
 
     <div class="glass-card">
       <form id="trackerForm">
-        
-        <!-- Strict Date Lock -->
-        <div class="field">
-          <label for="date">Today's Date (Locked)</label>
-          <input type="date" id="date" readonly style="opacity: 0.7; cursor: not-allowed;" />
+        <!-- calendar setting  -->
+<div class="field">
+          <label for="date">Select Date</label>
+          <input type="date" id="date" required onclick="this.showPicker()" style="cursor: pointer; width: 100%;" />
         </div>
 
         <!-- Cascading Dropdowns -->
@@ -174,6 +233,36 @@
     </div>
   </div>
 
+  <!-- LEADERBOARD SECTION -->
+    <div class="glass-card" id="leaderboardSection" style="margin-top: 30px;">
+      <div class="feed-header">
+        <div class="feed-title" style="color: #ffd700; text-shadow: 0 0 10px rgba(255,215,0,0.3);">🏆 HALL OF FAME</div>
+      </div>
+      
+      <div class="lb-controls">
+        <!-- Team vs Student Toggle -->
+        <div class="lb-tabs-container">
+          <div class="lb-tabs">
+            <button class="lb-tab active" id="tab-student" onclick="switchLbType('student')">👨‍💻 Students</button>
+            <button class="lb-tab" id="tab-team" onclick="switchLbType('team')">🛡️ Teams</button>
+          </div>
+        </div>
+        <!-- Timeframe Toggle -->
+        <div class="lb-tabs-container">
+          <div class="lb-tabs" style="background: rgba(0,0,0,0.2);">
+            <button class="lb-tab active" id="time-today" onclick="switchLbTime('today')">Today</button>
+            <button class="lb-tab" id="time-weekly" onclick="switchLbTime('weekly')">7 Days</button>
+            <button class="lb-tab" id="time-all" onclick="switchLbTime('all')">All-Time</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="lb-list" id="lbList">
+        <!-- Rankings will inject here dynamically -->
+        <div style="text-align: center; color: var(--text-muted); padding: 20px;">Fetching ranks...</div>
+      </div>
+    </div>
+
   <div id="celebrationModal">
     <div class="modal-box">
       <div class="modal-emoji" id="modalEmoji">🔥</div>
@@ -189,18 +278,19 @@
     // ==========================================
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxXwY1vzV3_qKm82RptT4XX3SWw4JbkA3NVplqfe2W7AOFfHwmXnaG3TIF-n2DjyOTOSA/exec";
 
-    // Team & Student Dictionary (Edit these names for your 40 students)
+
+// Team & Student Dictionary (Real Names)
     const cohortData = {
-      "Team 1": ["Student 1", "Student 2", "Student 3", "Student 4"],
-      "Team 2": ["Student 5", "Student 6", "Student 7", "Student 8"],
-      "Team 3": ["Student 9", "Student 10", "Student 11", "Student 12"],
-      "Team 4": ["Student 13", "Student 14", "Student 15", "Student 16"],
-      "Team 5": ["Student 17", "Student 18", "Student 19", "Student 20"],
-      "Team 6": ["Student 21", "Student 22", "Student 23", "Student 24"],
-      "Team 7": ["Student 25", "Student 26", "Student 27", "Student 28"],
-      "Team 8": ["Student 29", "Student 30", "Student 31", "Student 32"],
-      "Team 9": ["Student 33", "Student 34", "Student 35", "Student 36"],
-      "Team 10": ["Student 37", "Student 38", "Student 39", "Student 40"]
+      "Alpha Coders": ["Praveen Kumar", "Aarav Sharma", "Daksh Agarwal", "Rohit Singh"],
+      "Syntax Squad": ["Uday Gupta", "Aditya Verma", "Karan Malhotra", "Rohan Desai"],
+      "Bug Bashers": ["Sneha Iyer", "Priya Sharma", "Neha Reddy", "Anjali Singh"],
+      "Logic Legion": ["Vikram Rathore", "Rahul Kapoor", "Sameer Joshi", "Kunal Tiwari"],
+      "Tech Titans": ["Arjun Patel", "Devansh Mehta", "Aryan Rajput", "Kabir Das"],
+      "Cyber Ninjas": ["Nisha Patil", "Kavya Menon", "Riya Sen", "Megha Nair"],
+      "Data Demons": ["Harsh Vardhan", "Abhinav Mishra", "Siddharth Bose", "Yash Jain"],
+      "Web Wizards": ["Ishaan Chawla", "Parth Kadam", "Pranav Deshmukh", "Chaitanya Rao"],
+      "Cloud Chasers": ["Shruti Hassan", "Tanya Bhatia", "Simran Kaur", "Pooja Hegde"],
+      "Runtime Terrors": ["Gaurav Dubey", "Manish Pandey", "Saurabh Shukla", "Nitin Yadav"]
     };
 
     // Predefined Subjects
@@ -214,15 +304,18 @@
       "Other"
     ];
 
-    // ==========================================
+// ==========================================
     // 2. INITIALIZATION (Date & Dropdowns)
     // ==========================================
     
-    // Lock Date to Today (Local Time)
+    // Date Logic: Aaj aur past ki sabhi dates allow karega, future block karega
     const today = new Date();
-    // Adjust for local timezone offset
-    const localIsoDate = new Date(today.getTime() - (today.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
-    document.getElementById('date').value = localIsoDate;
+    const localToday = new Date(today.getTime() - (today.getTimezoneOffset() * 60000));
+    const todayIsoDate = localToday.toISOString().split('T')[0];
+
+    const dateInput = document.getElementById('date');
+    dateInput.value = todayIsoDate;       // By default aaj ki date set rahegi
+    dateInput.max = todayIsoDate;         // Future dates select nahi ho sakti (Blocked)
 
     // Populate Team Dropdown
     const teamSelect = document.getElementById('team');
@@ -413,20 +506,104 @@
     });
 
     // ==========================================
-    // 6. FETCH FEED & MVP (Sums across all rows)
+    // 6. FETCH FEED, MVP & LEADERBOARD
     // ==========================================
+    let globalSheetData = [];
+    let currentLbType = 'student'; 
+    let currentLbTime = 'today';   
+
+    // Smooth Scroll to Leaderboard
+    function scrollToLeaderboard() {
+      document.getElementById('leaderboardSection').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // Toggle Functions (Student vs Team)
+    function switchLbType(type) {
+      currentLbType = type;
+      document.getElementById('tab-student').classList.remove('active');
+      document.getElementById('tab-team').classList.remove('active');
+      document.getElementById(`tab-${type}`).classList.add('active');
+      renderLeaderboard();
+    }
+
+    // Toggle Functions (Timeframe)
+    function switchLbTime(time) {
+      currentLbTime = time;
+      document.getElementById('time-today').classList.remove('active');
+      document.getElementById('time-weekly').classList.remove('active');
+      document.getElementById('time-all').classList.remove('active');
+      document.getElementById(`time-${time}`).classList.add('active');
+      renderLeaderboard();
+    }
+
+    // Render Leaderboard Data
+    function renderLeaderboard() {
+      let filteredData = globalSheetData;
+      
+      const today = new Date();
+      const localToday = new Date(today.getTime() - (today.getTimezoneOffset() * 60000));
+      const todayStr = localToday.toISOString().split('T')[0];
+
+      if (currentLbTime === 'today') {
+        filteredData = globalSheetData.filter(d => d.date === todayStr);
+      } else if (currentLbTime === 'weekly') {
+        const lastWeek = new Date(localToday);
+        lastWeek.setDate(lastWeek.getDate() - 7);
+        const lastWeekStr = lastWeek.toISOString().split('T')[0];
+        filteredData = globalSheetData.filter(d => d.date >= lastWeekStr && d.date <= todayStr);
+      }
+
+      const totals = {};
+      filteredData.forEach(row => {
+        const key = currentLbType === 'team' ? row.team : row.name;
+        if (!key || key === 'No Team') return;
+        totals[key] = (totals[key] || 0) + parseFloat(row.hours || 0);
+      });
+
+      const sortedLb = Object.entries(totals).sort((a, b) => b[1] - a[1]);
+      const lbList = document.getElementById('lbList');
+
+      if (sortedLb.length === 0) {
+        lbList.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 30px;">No grind records found for this period. ⏳</div>`;
+        return;
+      }
+
+      lbList.innerHTML = sortedLb.map((item, index) => {
+        const rank = index + 1;
+        let rankClass = 'rank-other';
+        let rankIcon = `#${rank}`;
+        
+        if (rank === 1) { rankClass = 'rank-1'; rankIcon = '🥇'; }
+        else if (rank === 2) { rankClass = 'rank-2'; rankIcon = '🥈'; }
+        else if (rank === 3) { rankClass = 'rank-3'; rankIcon = '🥉'; }
+        
+        return `
+          <div class="lb-item">
+            <div class="lb-rank ${rankClass}">${rankIcon}</div>
+            <div class="lb-details">
+              <div class="lb-name">${item[0]}</div>
+            </div>
+            <div class="lb-hours">${item[1].toFixed(1)} <span>hrs</span></div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Fetch Data from Google Sheet
     async function fetchFeed() {
       const feedList = document.getElementById('feedList');
       try {
         const res = await fetch(SCRIPT_URL);
         const data = await res.json();
-
+        
+        globalSheetData = data; // Data save kar liya Leaderboard ke liye
+        
         if (!data || data.length === 0) {
           feedList.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 18px;">No sessions logged yet.</div>`;
           return;
         }
 
-        // Render feed items
+        // Recent Logs Print Karna
         feedList.innerHTML = data.slice(0, 15).map(item => `
           <div class="feed-item">
             <div class="feed-left">
@@ -444,11 +621,14 @@
         `).join('');
 
         calculateMVP(data);
+        renderLeaderboard(); // Leaderboard Refresh
+        
       } catch (err) {
         feedList.innerHTML = `<div style="text-align: center; color: #ff6b8b;">Error syncing logs.</div>`;
       }
     }
 
+    // Daily MVP Banner Logic
     function calculateMVP(data) {
       const todayStr = document.getElementById('date').value;
       const todayLogs = data.filter(item => item.date === todayStr);
@@ -458,7 +638,6 @@
         return;
       }
 
-      // Group hours by name (This handles multiple rows perfectly)
       const totals = {};
       todayLogs.forEach(log => {
         totals[log.name] = (totals[log.name] || 0) + parseFloat(log.hours || 0);
@@ -477,7 +656,8 @@
       }
     }
 
-    fetchFeed();
+    // Load Data On Page Start
+    fetchFeed(); 
   </script>
 </body>
 </html>
