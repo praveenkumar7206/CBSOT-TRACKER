@@ -263,12 +263,19 @@
               <option value="" disabled selected>Choose your team...</option>
             </select>
           </div>
-          <div class="field">
-            <label for="name">Your Name</label>
+<!-- NAME & PIN ROW -->
+        <div style="display: flex; gap: 15px;">
+          <div class="field" style="flex: 1;">
+            <label for="name">Select Your Name</label>
             <select id="name" required disabled>
-              <option value="" disabled selected>Select Team First</option>
+              <option value="" disabled selected>Select Team First...</option>
             </select>
           </div>
+          <div class="field" style="width: 110px;">
+            <label for="pin" style="color: #ffcc00;">Secret PIN 🔒</label>
+            <input type="password" id="pin" required maxlength="4" placeholder="****" style="text-align: center; font-weight: 800; letter-spacing: 3px; cursor: text;" />
+          </div>
+        </div>
         </div>
 
         <div id="dynamicEntries">
@@ -526,19 +533,37 @@
       const progressFill = document.getElementById('progressFill');
       const loadingText = document.getElementById('loadingText');
 
-// 1. Data Validate Karo (ULTIMATE BYPASS LOGIC)
+// ==========================
+      // SQUAD SECRET PIN DATABASE
+      // ==========================
+      const studentPins = {
+        "Praveen Kumar": "7206",
+        "Aarav Sharma": "1111",
+        "Daksh Agarwal": "2222",
+        "Rohit Singh": "3333",
+        // Bhai, baki dosto ke naam aur unke 4-digit PIN yahan add kar lena!
+        // Agar kisi ka PIN yahan nahi likha hoga, toh uska default pass "0000" maan liya jayega.
+      };
+
+      // 1. Data Validate Karo (ULTIMATE BYPASS LOGIC)
       const form = document.getElementById('trackerForm');
       const team = document.getElementById('team').value;
       const name = document.getElementById('name').value;
       const date = document.getElementById('date').value;
+      const enteredPin = document.getElementById('pin').value;
       
+      // --- PIN VERIFICATION LOGIC ---
+      const correctPin = studentPins[name] || "0000"; // Default pin for unlisted users is 0000
+      if (enteredPin !== correctPin) {
+        alert(`🚨 IMPOSTER ALERT! 🚨\nWrong PIN for ${name}. You cannot submit this!`);
+        return; // Galat PIN par form yahin ruk jayega, aage nahi badhega!
+      }
+      // ------------------------------
+
       const entries = [];
-      
-      // Form ke andar se saare Dropdowns aur Inputs direct utha lo (bina class ke)
       const allSelects = Array.from(form.querySelectorAll('select')).filter(s => s.id !== 'team' && s.id !== 'name');
-      const allInputs = Array.from(form.querySelectorAll('input')).filter(i => i.type !== 'date' && i.type !== 'submit' && i.type !== 'button');
+      const allInputs = Array.from(form.querySelectorAll('input')).filter(i => i.type !== 'date' && i.type !== 'submit' && i.type !== 'button' && i.id !== 'pin');
       
-      // Har subject ke aage 2 input box hote hain (Topic aur Hours)
       for (let i = 0; i < allSelects.length; i++) {
         const subject = allSelects[i] ? allSelects[i].value.trim() : "";
         const topicBox = allInputs[i * 2];
@@ -547,7 +572,6 @@
         const topic = topicBox ? topicBox.value.trim() : "";
         const hours = hoursBox ? hoursBox.value.trim() : "";
         
-        // Agar teeno me kuch na kuch likha hai, toh save kar lo
         if (subject !== "" && topic !== "" && hours !== "") {
           entries.push({ subject, topic, hours });
         }
